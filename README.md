@@ -5,6 +5,7 @@ A three node Docker Swarm cluster, featuring a distributed Ceph OSD file system,
 ## Dependencies
 - A (preferably) *nix based host system (tested on Ubuntu 23.10)
 - VirtualBox >= 7.0
+  - Ensure a `host-only` network is created in VirtualBox, with an IPv4 Address of: 192.168.56.1
 - Vagrant >= 2.4.0
 
 ## TLDR Setup
