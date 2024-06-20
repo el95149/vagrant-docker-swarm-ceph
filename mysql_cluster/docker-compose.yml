@@ -1,0 +1,139 @@
+version: '3'
+services:
+  mysql-server-1:
+    image: mysql/mysql-server:8.0.32
+    environment:
+      - MYSQL_ROOT_PASSWORD=mysql
+      - MYSQL_ROOT_HOST=%
+    command:
+      [
+        "mysqld",
+        "--server_id=1",
+        "--binlog_checksum=NONE",
+        "--gtid_mode=ON",
+        "--enforce_gtid_consistency=ON",
+        "--log_bin",
+        "--log_slave_updates=ON",
+        "--master_info_repository=TABLE",
+        "--relay_log_info_repository=TABLE",
+        "--transaction_write_set_extraction=XXHASH64",
+        "--user=mysql",
+        "--skip-host-cache",
+        "--default_authentication_plugin=mysql_native_password",
+        "--binlog_transaction_dependency_tracking=WRITESET",
+        # allows the MySQL services/nodes to communicate with each other using the hostname
+        "--report-host=mysql-server-1",
+      ]
+    deploy:
+      placement:
+        constraints: [ node.labels.type == leader ]
+      #      necessary, to allow the MySQL services/nodes to communicate with each other
+      endpoint_mode: dnsrr
+    volumes:
+      - /home/vagrant/mysql-data:/var/lib/mysql
+
+  mysql-server-2:
+    image: mysql/mysql-server:8.0.32
+    environment:
+      - MYSQL_ROOT_PASSWORD=mysql
+      - MYSQL_ROOT_HOST=%
+    command:
+      [
+        "mysqld",
+        "--server_id=2",
+        "--binlog_checksum=NONE",
+        "--gtid_mode=ON",
+        "--enforce_gtid_consistency=ON",
+        "--log_bin",
+        "--log_slave_updates=ON",
+        "--master_info_repository=TABLE",
+        "--relay_log_info_repository=TABLE",
+        "--transaction_write_set_extraction=XXHASH64",
+        "--user=mysql",
+        "--skip-host-cache",
+        "--default_authentication_plugin=mysql_native_password",
+        "--relay-log=mysql-server-2-relay-bin",
+        "--binlog_transaction_dependency_tracking=WRITESET",
+        "--report-host=mysql-server-2",
+      ]
+    deploy:
+      placement:
+        constraints: [ node.labels.type == mysql-worker-2 ]
+      endpoint_mode: dnsrr
+    volumes:
+      - /home/vagrant/mysql-data:/var/lib/mysql
+
+  mysql-server-3:
+    image: mysql/mysql-server:8.0.32
+    environment:
+      - MYSQL_ROOT_PASSWORD=mysql
+      - MYSQL_ROOT_HOST=%
+    command:
+      [
+        "mysqld",
+        "--server_id=3",
+        "--binlog_checksum=NONE",
+        "--gtid_mode=ON",
+        "--enforce_gtid_consistency=ON",
+        "--log_bin",
+        "--log_slave_updates=ON",
+        "--master_info_repository=TABLE",
+        "--relay_log_info_repository=TABLE",
+        "--transaction_write_set_extraction=XXHASH64",
+        "--user=mysql",
+        "--skip-host-cache",
+        "--default_authentication_plugin=mysql_native_password",
+        "--relay-log=mysql-server-3-relay-bin",
+        "--binlog_transaction_dependency_tracking=WRITESET",
+        "--report-host=mysql-server-3",
+      ]
+    deploy:
+      placement:
+        constraints: [ node.labels.type == mysql-worker-3 ]
+      endpoint_mode: dnsrr
+    volumes:
+      - /home/vagrant/mysql-data:/var/lib/mysql
+
+
+  mysql-shell:
+    entrypoint:
+      - /run.sh
+      - mysqlsh
+    environment:
+      - MYSQL_USER=root
+      - MYSQL_HOST=mysql-server-1
+      - MYSQL_PORT=3306
+      - MYSQL_PASSWORD=mysql
+      - MYSQLSH_SCRIPT=/scripts/setupCluster.js
+      - MYSQL_SCRIPT=/scripts/db.sql
+    image: waveoffire/mysql-shell-batch
+    volumes:
+      - ./scripts/:/scripts/
+    depends_on:
+      - mysql-server-1
+      - mysql-server-2
+      - mysql-server-3
+    deploy:
+      placement:
+        constraints: [ node.labels.type == leader ]
+      replicas: 1
+      restart_policy:
+        condition: none
+
+
+  mysql-router:
+    environment:
+      - MYSQL_USER=root
+      - MYSQL_HOST=mysql-server-1
+      - MYSQL_PORT=3306
+      - MYSQL_PASSWORD=mysql
+      - MYSQL_INNODB_CLUSTER_MEMBERS=3
+    image: mysql/mysql-router:8.0.32
+    ports:
+      - "6446:6446"
+      - "6447:6447"
+    depends_on:
+      - mysql-server-1
+      - mysql-server-2
+      - mysql-server-3
+      - mysql-shell
