@@ -1,4 +1,4 @@
-# Docker Swarm + Ceph Cluster on Vagrant/Virtualbox
+# Docker Swarm + Ceph (+ MySQL) Cluster on Vagrant/Virtualbox
 
 A three node Docker Swarm cluster, featuring a distributed Ceph OSD file system, for sandbox/playground purposes. Inspired by [Funky Penguin's](https://geek-cookbook.funkypenguin.co.nz) beautiful blog articles.
 
