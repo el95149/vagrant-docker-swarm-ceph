@@ -26,11 +26,12 @@ services:
       ]
     deploy:
       placement:
-        constraints: [ node.labels.type == leader ]
+        constraints:
+          - node.labels.type == ${MYSQL_NODE1}
       #      necessary, to allow the MySQL services/nodes to communicate with each other
       endpoint_mode: dnsrr
     volumes:
-      - /home/vagrant/mysql-data:/var/lib/mysql
+      - /var/data/${MYSQL_NODE1}:/var/lib/mysql
 
   mysql-server-2:
     image: mysql/mysql-server:8.0.32
@@ -58,10 +59,12 @@ services:
       ]
     deploy:
       placement:
-        constraints: [ node.labels.type == mysql-worker-2 ]
+        constraints:
+          - node.labels.type == ${MYSQL_NODE2}
+      #      necessary, to allow the MySQL services/nodes to communicate with each other
       endpoint_mode: dnsrr
     volumes:
-      - /home/vagrant/mysql-data:/var/lib/mysql
+      - /var/data/${MYSQL_NODE2}:/var/lib/mysql
 
   mysql-server-3:
     image: mysql/mysql-server:8.0.32
@@ -89,11 +92,12 @@ services:
       ]
     deploy:
       placement:
-        constraints: [ node.labels.type == mysql-worker-3 ]
+        constraints:
+          - node.labels.type == ${MYSQL_NODE3}
+      #      necessary, to allow the MySQL services/nodes to communicate with each other
       endpoint_mode: dnsrr
     volumes:
-      - /home/vagrant/mysql-data:/var/lib/mysql
-
+      - /var/data/${MYSQL_NODE3}:/var/lib/mysql
 
   mysql-shell:
     entrypoint:
@@ -115,11 +119,11 @@ services:
       - mysql-server-3
     deploy:
       placement:
-        constraints: [ node.labels.type == leader ]
+        constraints:
+          - node.labels.type == ${MYSQL_NODE1}
       replicas: 1
       restart_policy:
         condition: none
-
 
   mysql-router:
     environment:

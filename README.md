@@ -7,6 +7,7 @@ A three node Docker Swarm cluster, featuring a distributed Ceph OSD file system,
 - VirtualBox >= 7.0
   - Ensure a `host-only` network is created in VirtualBox, with an IPv4 Address of: 192.168.56.1
 - Vagrant >= 2.4.0
+- At least 16GB RAM (~10GB for the VMs, the rest for the host system)
 
 ## TLDR Setup
 
@@ -21,6 +22,25 @@ and pray to the demo gods.
 Found at `https://<manager node IP>:8443`, defaults to https://192.168.56.3:8443 (user: admin, password: admin).
 
 ![ceph.png](ceph.png)
+
+## Bonus: MySQL InnoDB Cluster on Docker Swarm
+So, now you have a Docker Swarm cluster with Ceph. If you also want to add a MySQL InnoDB Cluster to the mix, run:
+```shell
+vagrant provision --provision-with mysql_cluster
+```
+
+Once provisioning is done, you can check the MySQL InnoDB Cluster status by running:
+```shell
+$ vagrant ssh node01
+$ docker exec -it <mysql_cluster_mysql-server-1.1.id suffix> mysqlsh
+MySQL  JS > shell.connect('root@mysql-server-1:3306', 'mysql');
+MySQL  JS > var cluster = dba.getCluster();
+MySQL  JS > cluster.status();
+````
+
+Look for `"status": "ONLINE"` in the output.
+
+![mysql.png](mysql.png)
 
 ## Troubleshooting
 

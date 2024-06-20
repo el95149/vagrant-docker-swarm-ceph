@@ -43,7 +43,7 @@ Vagrant.configure("2") do |config|
       end
 
       server.vm.provider :virtualbox do |vb|
-        vb.customize ["modifyvm", :id, "--memory", machine[:role] == "manager" ? "4096" : "2048"]
+        vb.customize ["modifyvm", :id, "--memory", machine[:role] == "manager" ? "4096" : "3072"]
         vb.customize ["modifyvm", :id, "--cpus", "2"]
         vb.customize ["modifyvm", :id, "--vram", 128]
 
@@ -87,6 +87,12 @@ Vagrant.configure("2") do |config|
       # Mount CephFS on all nodes. Done only after Ceph cluster setup. Does not run by default.
       hostnames = servers.map { |s| s[:hostname] }.join(",")
       server.vm.provision "ceph_all", type: "shell", run: "never", args: hostnames, path: "provision_ceph_all.sh"
+
+      # MySQL cluster setup. Done only on manager node. Does not run by default. (Ceph cluster needs to be setup first)
+      if machine[:role] == "manager"
+        hostnames_roles = servers.map { |s| "#{s[:hostname]}-#{s[:role]}" }.join(" ")
+        server.vm.provision "mysql_cluster", type: "shell", run: "never", args: hostnames_roles, path: "provision_mysql_cluster.sh"
+      end
 
     end
   end
